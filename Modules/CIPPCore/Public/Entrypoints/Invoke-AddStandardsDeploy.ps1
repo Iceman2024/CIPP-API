@@ -20,12 +20,18 @@ Function Invoke-AddStandardsDeploy {
         $Settings | Add-Member -NotePropertyName 'v2.1' -NotePropertyValue $true -Force
         if ($Settings.phishProtection.remediate) {
             $URL = $request.headers.'x-ms-original-url'.split('/api') | Select-Object -First 1
-            write-host $URL
+            Write-Host $URL
             $Settings.phishProtection = [pscustomobject]@{
-                remediate = $true
+                remediate = [bool]$Settings.phishProtection.remediate
                 URL       = $URL
             }
         }
+        #Get all subobjects in $Settings that are set to false, and remove them.
+        $Settings.psobject.properties.name | Where-Object { $Settings.$_ -eq $false -and $_ -ne 'v2.1' -and $_ -in 'Alert', 'Remediate', 'Report' } | ForEach-Object {
+            $Settings.psobject.properties.remove($_)
+        }
+
+
         foreach ($Tenant in $tenants) {
         
             $object = [PSCustomObject]@{
